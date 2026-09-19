@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Garrott Waldron — Bridge Console</title>
+<meta name="description" content="Garrott Waldron's portfolio, presented as a spaceship bridge console.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05070b;
+    --hull:#0d1117;
+    --panel:#12161f;
+    --panel-2:#171d29;
+    --bezel:#262e3d;
+    --bezel-lt:#3a4459;
+    --text:#d7e4ee;
+    --text-dim:#7c8aa0;
+    --text-faint:#4c576c;
+    --amber:#ffb02e;
+    --amber-dim:#7a5a1e;
+    --cyan:#4be3e8;
+    --cyan-dim:#1f5b5e;
+    --green:#57e08a;
+    --red:#ff5a5a;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Share Tech Mono',ui-monospace,monospace;
+    -webkit-font-smoothing:antialiased;
+    padding:18px;
+    padding-block: calc(18px + env(safe-area-inset-top, 0px)) calc(18px + env(safe-area-inset-bottom, 0px));
+    min-height:100%;
+    background-image:
+      radial-gradient(1px 1px at 8% 15%, #ffffff88 1px, transparent 1px),
+      radial-gradient(1px 1px at 22% 62%, #ffffff66 1px, transparent 1px),
+      radial-gradient(1.5px 1.5px at 38% 28%, #ffffffaa 1px, transparent 1px),
+      radial-gradient(1px 1px at 54% 80%, #ffffff55 1px, transparent 1px),
+      radial-gradient(1.5px 1.5px at 68% 12%, #ffffff99 1px, transparent 1px),
+      radial-gradient(1px 1px at 79% 55%, #ffffff66 1px, transparent 1px),
+      radial-gradient(1px 1px at 91% 35%, #ffffff77 1px, transparent 1px),
+      radial-gradient(1.5px 1.5px at 12% 90%, #ffffff88 1px, transparent 1px),
+      radial-gradient(1px 1px at 96% 78%, #ffffff55 1px, transparent 1px);
+    background-repeat:repeat; background-size:600px 600px;
+  }
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  ::selection{background:var(--amber); color:#100b00;}
+
+  .frame{max-width:1180px; margin:0 auto;}
+
+  /* top status strip */
+  .statusbar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    background:var(--panel); border:1px solid var(--bezel); border-radius:12px;
+    padding:12px 18px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .callsign{font-family:'Orbitron'; font-weight:800; font-size:15px; letter-spacing:.06em; color:var(--text);}
+  .callsign span{color:var(--amber);}
+  .lights{display:flex; align-items:center; gap:16px; font-size:11px; color:var(--text-dim); letter-spacing:.06em;}
+  .light{display:flex; align-items:center; gap:7px;}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:blink 2.6s ease-in-out infinite;}
+  .dot.amber{background:var(--amber); box-shadow:0 0 8px var(--amber); animation-delay:.4s;}
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .viewing-now{font-size:11px; color:var(--cyan); letter-spacing:.08em;}
+
+  /* boot overlay */
+  #boot{
+    position:fixed; inset:0; background:#05070b; color:var(--green); z-index:200;
+    font-size:14px; padding:26px; line-height:1.9; white-space:pre-wrap;
+  }
+  #boot span{opacity:0;}
+  @media (prefers-reduced-motion: reduce){ #boot{display:none;} .dot{animation:none;} }
+
+  /* console grid */
+  .console{display:grid; grid-template-columns:190px 1fr; gap:14px;}
+  @media (max-width:860px){ .console{grid-template-columns:1fr;} }
+
+  .switchbank{
+    background:var(--panel); border:1px solid var(--bezel); border-radius:var(--radius);
+    padding:14px; display:flex; flex-direction:column; gap:10px;
+  }
+  @media (max-width:860px){ .switchbank{flex-direction:row; flex-wrap:wrap;} }
+  .switch{
+    display:flex; align-items:center; gap:11px; background:linear-gradient(180deg,#1a2029,#11151d);
+    border:1px solid var(--bezel); border-bottom:2px solid #05070a;
+    border-radius:9px; padding:10px 12px; cursor:pointer; color:var(--text-dim); font-size:12.5px;
+    letter-spacing:.05em; text-align:left; transition:transform .08s, border-color .15s, color .15s; position:relative; flex:1; min-width:150px;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 2px 3px rgba(0,0,0,.4);
+  }
+  .switch:hover{border-color:var(--bezel-lt); color:var(--text);}
+  .switch:active{transform:translateY(1px);}
+  .switch:focus-visible{outline:2px solid var(--cyan); outline-offset:2px;}
+
+  /* physical rocker toggle */
+  .toggle{
+    flex:none; width:44px; height:23px; border-radius:6px; position:relative;
+    background:linear-gradient(180deg,#0c0f14,#171d27);
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.75), inset 0 -1px 0 rgba(255,255,255,.04), 0 1px 0 rgba(255,255,255,.05);
+    border:1px solid #05070a;
+  }
+  .toggle .nub{
+    position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:4px;
+    background:linear-gradient(180deg,#576378,#2b3342);
+    box-shadow:0 1px 2px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -2px 3px rgba(0,0,0,.3);
+    transition:left .16s cubic-bezier(.4,1.8,.6,1), background .16s, box-shadow .16s;
+  }
+  .switch.active{border-color:var(--amber); color:var(--text);}
+  .switch.active .toggle{box-shadow:inset 0 2px 4px rgba(0,0,0,.75), 0 0 10px rgba(255,176,46,.4);}
+  .switch.active .toggle .nub{
+    left:23px; background:linear-gradient(180deg,#ffd680,#e0932a);
+    box-shadow:0 0 8px var(--amber), inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 3px rgba(120,60,0,.4);
+  }
+  .switch .num{font-family:'Orbitron'; font-size:10px; color:var(--text-faint);}
+
+  .lever-wrap{margin-top:auto; padding-top:16px; border-top:1px dashed var(--bezel); display:flex; flex-direction:column; align-items:center; gap:8px;}
+  @media (max-width:860px){ .lever-wrap{width:100%; border-top:none; padding-top:4px; margin-top:10px;} }
+  .lever-plate{
+    background:repeating-linear-gradient(135deg, #2b2308 0 10px, #171205 10px 20px);
+    border:1px solid #4a3a10; border-radius:12px; padding:12px 8px 16px;
+    display:flex; flex-direction:column; align-items:center; width:100%;
+  }
+  .lever-housing{
+    position:relative; width:52px; height:118px; border-radius:8px; margin-bottom:10px;
+    background:linear-gradient(180deg,#1a1418,#0c0a0b);
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.8), inset 0 0 0 1px #000;
+  }
+  .lever-slot{
+    position:absolute; left:50%; top:10px; bottom:10px; width:8px; transform:translateX(-50%);
+    border-radius:4px; background:linear-gradient(90deg,#000,#1c1c1c,#000);
+    box-shadow:inset 0 0 4px rgba(0,0,0,.9);
+  }
+  .lever-grip{
+    position:absolute; left:50%; bottom:12px; width:30px; height:30px; border-radius:50%;
+    transform:translate(-50%,0);
+    background:radial-gradient(circle at 35% 30%, #ff8a7a, #d1362f 55%, #6e0f0f 100%);
+    box-shadow:0 3px 6px rgba(0,0,0,.6), inset 0 1px 2px rgba(255,255,255,.4), inset 0 -3px 5px rgba(0,0,0,.4);
+    transition:transform .5s cubic-bezier(.2,1.6,.4,1), box-shadow .3s;
+    cursor:pointer;
+  }
+  .lever-grip::before{
+    content:''; position:absolute; left:50%; bottom:-46px; width:9px; height:50px; transform:translateX(-50%);
+    background:linear-gradient(90deg,#3a3d44,#7d838d 45%,#3a3d44); border-radius:4px; z-index:-1;
+  }
+  .lever-housing.pulled .lever-grip{
+    transform:translate(-50%,-70px);
+    box-shadow:0 0 14px #ff5a5a, inset 0 1px 2px rgba(255,255,255,.5), inset 0 -3px 5px rgba(0,0,0,.4);
+  }
+  .lever-label{font-family:'Orbitron'; font-size:10.5px; font-weight:700; letter-spacing:.08em; color:var(--amber); text-align:center;}
+  .lever-sub{font-size:9.5px; color:#a08840; letter-spacing:.05em; margin-top:2px;}
+  .lever{ text-decoration:none; display:block; }
+
+  /* viewscreen */
+  .viewscreen{
+    background:var(--hull); border:1px solid var(--bezel); border-radius:var(--radius);
+    padding:26px; position:relative; overflow:hidden; min-height:520px;
+  }
+  .viewscreen::before{
+    content:''; position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background:repeating-linear-gradient(0deg, transparent 0px, transparent 2px, #ffffff05 3px, transparent 4px);
+  }
+  .panel-title{font-family:'Orbitron'; font-weight:700; font-size:13px; letter-spacing:.14em; color:var(--cyan); text-transform:uppercase; margin-bottom:4px;}
+  .panel-sub{font-size:12px; color:var(--text-faint); margin-bottom:20px;}
+
+  /* identity panel */
+  .id-name{font-family:'Orbitron'; font-weight:800; font-size:clamp(24px,4.4vw,36px); color:var(--text); letter-spacing:.02em;}
+  .id-role{color:var(--amber); font-size:13px; margin-top:6px; letter-spacing:.05em;}
+  .id-bio{color:var(--text-dim); font-size:14px; line-height:1.75; max-width:640px; margin-top:18px;}
+  .clearances{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px;}
+  .clr{font-size:11px; padding:7px 12px; border-radius:6px; background:var(--panel); border:1px solid var(--bezel); color:var(--cyan); letter-spacing:.04em;}
+  .readout-row{display:flex; gap:28px; flex-wrap:wrap; margin-top:26px; padding-top:20px; border-top:1px dashed var(--bezel);}
+  .readout .k{font-size:10px; color:var(--text-faint); letter-spacing:.1em;}
+  .readout .v{font-size:13px; color:var(--text); margin-top:5px;}
+
+  /* crew log */
+  .log-entry{border-left:2px solid var(--bezel); padding:4px 0 22px 20px; position:relative;}
+  .log-entry::before{content:''; position:absolute; left:-6px; top:6px; width:10px; height:10px; border-radius:50%; background:var(--amber); box-shadow:0 0 8px var(--amber);}
+  .log-entry.minor::before{background:var(--text-faint); box-shadow:none;}
+  .log-entry .ehead{font-family:'Orbitron'; font-size:14px; color:var(--text); letter-spacing:.03em;}
+  .log-entry .emeta{font-size:11.5px; color:var(--text-faint); margin-top:4px; letter-spacing:.03em;}
+  .log-entry ul{margin:12px 0 0; padding-left:18px; color:var(--text-dim); font-size:13px; line-height:1.7;}
+  .log-entry li{margin-bottom:5px;}
+
+  /* systems */
+  .sys-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;}
+  .sys-card{background:var(--panel); border:1px solid var(--bezel); border-radius:11px; padding:16px;}
+  .sys-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .sys-head h4{margin:0; font-family:'Orbitron'; font-size:12px; letter-spacing:.05em; color:var(--text);}
+  .sys-status{font-size:9.5px; color:var(--green); border:1px solid var(--green); border-radius:4px; padding:2px 6px; letter-spacing:.06em;}
+  .node-row{display:flex; flex-wrap:wrap; gap:6px;}
+  .node{font-size:11px; padding:5px 9px; border-radius:5px; background:var(--panel-2); border:1px solid var(--bezel); color:var(--text-dim);}
+  .standby-block{margin-top:22px; padding-top:18px; border-top:1px dashed var(--bezel);}
+  .standby-block .sys-status{color:var(--amber); border-color:var(--amber);}
+  .standby-block .node{color:var(--text-faint); border-style:dashed;}
+
+  /* mission log */
+  .mission-feat{background:var(--panel); border:1px solid var(--amber-dim); border-radius:11px; padding:20px; margin-bottom:14px;}
+  .mission-feat .panel-title{color:var(--amber);}
+  .ilo{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:16px;}
+  @media (max-width:700px){ .ilo{grid-template-columns:1fr 1fr;} }
+  .ilo div b{display:block; font-family:'Orbitron'; font-size:10px; letter-spacing:.08em; color:var(--cyan); margin-bottom:6px;}
+  .ilo div p{font-size:12.5px; color:var(--text-dim); line-height:1.55; margin:0;}
+  .mission-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px;}
+  .mission-card{background:var(--panel); border:1px solid var(--bezel); border-radius:11px; padding:16px; display:flex; flex-direction:column; gap:8px;}
+  .mission-card h4{margin:0; font-family:'Orbitron'; font-size:12.5px; color:var(--text);}
+  .mission-card p{font-size:12.5px; color:var(--text-dim); margin:0; line-height:1.55;}
+  .mission-card a.live{font-size:11.5px; color:var(--cyan); text-decoration:none; font-weight:700;}
+  .mission-card .tbd{font-size:11px; color:var(--text-faint);}
+  .mission-card .skills{margin-top:auto; padding-top:8px; border-top:1px solid var(--bezel); font-size:10.5px; color:var(--text-faint); letter-spacing:.03em;}
+
+  /* comms */
+  .comm-row{display:flex; flex-direction:column; gap:14px; max-width:420px;}
+  .freq{display:flex; justify-content:space-between; align-items:center; background:var(--panel); border:1px solid var(--bezel); border-radius:9px; padding:14px 16px;}
+  .freq .k{font-size:10px; color:var(--text-faint); letter-spacing:.1em;}
+  .freq .v{font-size:14px; color:var(--text); margin-top:4px;}
+  .freq a{text-decoration:none; color:var(--cyan); font-weight:700;}
+  .comm-note{margin-top:22px; font-size:12.5px; color:var(--text-dim); max-width:480px; line-height:1.6;}
+
+  .footline{text-align:center; margin-top:16px; font-size:11px; color:var(--text-faint); letter-spacing:.05em;}
+</style>
+</head>
+<body>
+
+<div id="boot" aria-hidden="true"></div>
+
+<div class="frame">
+  <div class="statusbar">
+    <div class="callsign">BRIDGE CONSOLE // <span>G. WALDRON</span></div>
+    <div class="lights">
+      <span class="light"><span class="dot"></span> ALL SYSTEMS NOMINAL</span>
+      <span class="light"><span class="dot amber"></span> REMOTE-READY</span>
+    </div>
+    <div class="viewing-now">VIEWING: <span id="viewingLabel">IDENTITY</span></div>
+  </div>
+
+  <div class="console">
+    <div class="switchbank" role="tablist" aria-label="Console sections">
+      <button class="switch active" data-panel="identity" role="tab" aria-selected="true"><span class="toggle"><span class="nub"></span></span><span class="num">01</span> IDENTITY</button>
+      <button class="switch" data-panel="crewlog" role="tab" aria-selected="false"><span class="toggle"><span class="nub"></span></span><span class="num">02</span> CREW LOG</button>
+      <button class="switch" data-panel="systems" role="tab" aria-selected="false"><span class="toggle"><span class="nub"></span></span><span class="num">03</span> SYSTEMS</button>
+      <button class="switch" data-panel="mission" role="tab" aria-selected="false"><span class="toggle"><span class="nub"></span></span><span class="num">04</span> MISSION LOG</button>
+      <button class="switch" data-panel="comms" role="tab" aria-selected="false"><span class="toggle"><span class="nub"></span></span><span class="num">05</span> COMMS</button>
+      <div class="lever-wrap">
+        <div class="lever-plate">
+          <a class="lever" href="resume.pdf" target="_blank" rel="noopener" id="leverLink">
+            <span class="lever-housing" id="leverHousing">
+              <span class="lever-slot"></span>
+              <span class="lever-grip"></span>
+            </span>
+          </a>
+          <div class="lever-label">PULL TO TRANSMIT</div>
+          <div class="lever-sub">full résumé record</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="viewscreen">
+
+      <div class="view-panel" data-view="identity">
+        <div class="panel-title">Identity // Officer Record</div>
+        <div class="panel-sub">Clearance level: public — safe to transmit to any recruiting vessel.</div>
+        <div class="id-name">GARROTT WALDRON</div>
+        <div class="id-role">DIGITAL OPERATIONS OFFICER · SYSTEMS BUILDER</div>
+        <p class="id-bio">Give me a messy spreadsheet, an unfamiliar tool, or a process nobody's documented, and I'll research it, learn what's needed, and build something that works — then keep improving it. That pattern shows up everywhere: running a web store's full product catalog, coordinating a five-county disaster-recovery program, and building a long list of my own tools and systems off the clock.</p>
+        <div class="clearances">
+          <span class="clr">E-COMMERCE</span><span class="clr">SYSTEMS &amp; DATA</span><span class="clr">AI &amp; AUTOMATION</span>
+          <span class="clr">TECHNICAL OPS</span><span class="clr">PROGRAM COORDINATION</span>
+        </div>
+        <div class="readout-row">
+          <div class="readout"><div class="k">STATUS</div><div class="v">Active since 2018</div></div>
+          <div class="readout"><div class="k">HOME PORT</div><div class="v">Hopkinsville, KY (remote-capable)</div></div>
+          <div class="readout"><div class="k">TRAINING</div><div class="v">B.A. Economics, Business minor — Univ. of Kentucky, 2019</div></div>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view="crewlog" hidden>
+        <div class="panel-title">Crew Log // Service Record</div>
+        <div class="panel-sub">Chronological, most recent first.</div>
+
+        <div class="log-entry">
+          <div class="ehead">Crisis Counselor</div>
+          <div class="emeta">Pennyroyal Mental Health Center · Hopkinsville, KY · May 2022 – Apr 2023</div>
+          <ul>
+            <li>Supported Western Kentucky tornado recovery as part of a 7-person team serving 5 counties; assessed needs and connected residents with housing, food, appliance and recovery resources.</li>
+            <li>Participated in 3 long-term recovery groups, helping coordinate partner programs and unmet-needs support across community organizations.</li>
+            <li>Built a comprehensive FEMA-facing PowerPoint on program impact, community needs and the role of mental-health services in disaster recovery.</li>
+            <li>Helped establish 3 support groups for residents coping with bereavement, anxiety and severe-weather-related stress.</li>
+          </ul>
+        </div>
+
+        <div class="log-entry">
+          <div class="ehead">Web Store Manager</div>
+          <div class="emeta">Cayce Mill Supply Co. · Hopkinsville, KY · Aug 2018 – Apr 2020</div>
+          <ul>
+            <li>Managed web-store product content from part-number research through spreadsheet organization and publication, sourcing accurate descriptions and vendor imagery.</li>
+            <li>Created and maintained eBay and Shopify listings to expand product visibility across online sales channels.</li>
+            <li>Produced daily Facebook and Instagram graphics in Adobe Photoshop for product awareness and digital merchandising.</li>
+            <li>Maintained accurate product, visual and inventory information across online and showroom environments.</li>
+          </ul>
+        </div>
+
+        <div class="log-entry minor">
+          <div class="ehead">Family Care Operations</div>
+          <div class="emeta">Private Family Care · Hopkinsville, KY · Apr 2020 – Apr 2021</div>
+          <ul>
+            <li>Managed medication routines, meals, household tasks, scheduling and safety monitoring while adapting to changing needs.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view="systems" hidden>
+        <div class="panel-title">Ship Systems // Capability Diagnostics</div>
+        <div class="panel-sub">All listed systems verified online. Standby systems are named next-skills, not current experience.</div>
+        <div class="sys-grid">
+          <div class="sys-card">
+            <div class="sys-head"><h4>E-COMMERCE ARRAY</h4><span class="sys-status">ONLINE</span></div>
+            <div class="node-row">
+              <span class="node">Shopify</span><span class="node">eBay</span><span class="node">Etsy</span><span class="node">Printify</span>
+              <span class="node">Product Research</span><span class="node">Catalog Data</span><span class="node">Inventory</span><span class="node">Merchandising</span>
+            </div>
+          </div>
+          <div class="sys-card">
+            <div class="sys-head"><h4>DATA CORE</h4><span class="sys-status">ONLINE</span></div>
+            <div class="node-row">
+              <span class="node">Excel</span><span class="node">Google Sheets</span><span class="node">Logic / Scoring Design</span>
+              <span class="node">Data Organization</span><span class="node">QA &amp; Troubleshooting</span><span class="node">Reporting</span>
+            </div>
+          </div>
+          <div class="sys-card">
+            <div class="sys-head"><h4>AI MODULE</h4><span class="sys-status">ONLINE</span></div>
+            <div class="node-row">
+              <span class="node">AI-Assisted Research</span><span class="node">Prompt Iteration</span><span class="node">Workflow Design</span><span class="node">Process Improvement</span>
+            </div>
+          </div>
+          <div class="sys-card">
+            <div class="sys-head"><h4>CONTENT BAY</h4><span class="sys-status">ONLINE</span></div>
+            <div class="node-row">
+              <span class="node">Photoshop</span><span class="node">Canva</span><span class="node">CapCut</span><span class="node">PowerPoint</span><span class="node">Acrobat</span>
+            </div>
+          </div>
+          <div class="sys-card">
+            <div class="sys-head"><h4>TECHNICAL OPS</h4><span class="sys-status">ONLINE</span></div>
+            <div class="node-row">
+              <span class="node">PC &amp; Network Troubleshooting</span><span class="node">Streaming / AV (OBS)</span><span class="node">Server Hosting &amp; Uptime</span>
+            </div>
+          </div>
+          <div class="sys-card">
+            <div class="sys-head"><h4>COMMS / COORDINATION</h4><span class="sys-status">ONLINE</span></div>
+            <div class="node-row">
+              <span class="node">Needs Assessment</span><span class="node">Cross-Org Collaboration</span><span class="node">Stakeholder Comms</span>
+              <span class="node">Presentation Development</span><span class="node">Documentation</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="standby-block">
+          <div class="sys-head"><h4>SYSTEMS IN CALIBRATION</h4><span class="sys-status">STANDBY</span></div>
+          <div class="node-row">
+            <span class="node">SQL</span><span class="node">Power BI / Looker Studio</span><span class="node">GA4</span><span class="node">Zapier</span>
+            <span class="node">Make</span><span class="node">AI Agents</span><span class="node">APIs</span><span class="node">TikTok Shop</span>
+            <span class="node">Advanced After Effects</span><span class="node">Basic SEO</span><span class="node">Asana / Monday / ClickUp</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view="mission" hidden>
+        <div class="panel-title">Mission Log // Systems Built Off the Clock</div>
+        <div class="panel-sub">Self-directed and side-business builds unless marked otherwise.</div>
+
+        <div class="mission-feat">
+          <div class="panel-title">Featured Mission — Fantasy League Engine</div>
+          <div class="panel-sub" style="margin-bottom:0;">Python scraper → Google Sheets → live GitHub Pages dashboard</div>
+          <div class="ilo">
+            <div><b>Input</b><p>Live ESPN league player &amp; team statistics via a Python + Selenium scraper.</p></div>
+            <div><b>Logic</b><p>Scoring rules, category weighting, tie handling, weekly scoring periods.</p></div>
+            <div><b>Output</b><p>Broadcast-style GitHub Pages dashboard — standings, rankings, history.</p></div>
+            <div><b>Skills</b><p>Spreadsheet engineering, rule design, QA, data-pipeline troubleshooting.</p></div>
+          </div>
+        </div>
+
+        <div class="mission-grid">
+          <div class="mission-card">
+            <h4>Booth Inventory Tracker</h4>
+            <p>Supabase-backed inventory app built for a family member's antique-booth business.</p>
+            <a class="live" href="https://lgw2222.github.io/booth" target="_blank" rel="noopener">lgw2222.github.io/booth →</a>
+            <div class="skills">CLIENT BUILD · database CRUD, inventory systems</div>
+          </div>
+          <div class="mission-card">
+            <h4>EliteVB Coaching Site</h4>
+            <p>Full business website with a Supabase-backed coach dashboard, built end-to-end for a client.</p>
+            <a class="live" href="https://elitevb.netlify.app" target="_blank" rel="noopener">elitevb.netlify.app →</a>
+            <div class="skills">CLIENT BUILD · full-stack integration</div>
+          </div>
+          <div class="mission-card">
+            <h4>Cutout Studio</h4>
+            <p>AI-assisted background-removal tool with a flood-fill mode, built for a print-on-demand workflow.</p>
+            <span class="tbd">live link: ask Garrott</span>
+            <div class="skills">AI TOOLING · applied automation</div>
+          </div>
+          <div class="mission-card">
+            <h4>GitHub Pages Launcher</h4>
+            <p>Deployment tool for shipping and syncing his own GitHub Pages projects, with Firebase cross-device sync.</p>
+            <span class="tbd">live link: ask Garrott</span>
+            <div class="skills">PLATFORM · infrastructure thinking</div>
+          </div>
+          <div class="mission-card">
+            <h4>Real-Time App Studio</h4>
+            <p>A dozen-plus single-file web apps with Firebase real-time backends — draft rooms, party games, collection trackers.</p>
+            <span class="tbd">live link: ask Garrott</span>
+            <div class="skills">APP STUDIO · real-time architecture</div>
+          </div>
+          <div class="mission-card">
+            <h4>Independent E-commerce</h4>
+            <p>Ongoing eBay reselling and a print-on-demand shop (Etsy + Shopify via Printify).</p>
+            <span class="tbd">ongoing</span>
+            <div class="skills">OPERATIONS · end-to-end e-commerce</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view="comms" hidden>
+        <div class="panel-title">Comms // Open Channel</div>
+        <div class="panel-sub">Accepting hails regarding remote digital operations &amp; e-commerce roles.</div>
+        <div class="comm-row">
+          <div class="freq"><div><div class="k">EMAIL FREQUENCY</div><div class="v"><a href="mailto:garrott1994@gmail.com">garrott1994@gmail.com</a></div></div></div>
+          <div class="freq"><div><div class="k">VOICE CHANNEL</div><div class="v"><a href="tel:+12703480960">270-348-0960</a></div></div></div>
+          <div class="freq"><div><div class="k">HOME PORT</div><div class="v">Hopkinsville, KY</div></div></div>
+          <div class="freq"><div><div class="k">FULL RECORDS</div><div class="v"><a href="resume.pdf" target="_blank" rel="noopener">Download résumé →</a></div></div></div>
+        </div>
+        <p class="comm-note">Prefer a standard layout? A plain professional portfolio and an RPG-style "player profile" version of this same record are also in circulation — ask Garrott for the links.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footline">BRIDGE CONSOLE v1.0 · ALL DATA VERIFIED AGAINST OFFICIAL SERVICE RECORD</div>
+</div>
+
+<script>
+  // boot sequence
+  (function(){
+    var boot = document.getElementById('boot');
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) { boot.remove(); return; }
+    var lines = ['> INITIALIZING BRIDGE CONSOLE...','> LOADING OFFICER RECORD... OK','> SYSTEMS CHECK... NOMINAL','> WELCOME ABOARD, G. WALDRON'];
+    boot.textContent = lines.join('\n');
+    setTimeout(function(){
+      boot.style.transition = 'opacity .4s ease';
+      boot.style.opacity = '0';
+      setTimeout(function(){ boot.remove(); }, 420);
+    }, 900);
+  })();
+
+  // panel switching
+  var switches = document.querySelectorAll('.switch[data-panel]');
+  var panels = document.querySelectorAll('.view-panel');
+  var label = document.getElementById('viewingLabel');
+  var names = {identity:'IDENTITY', crewlog:'CREW LOG', systems:'SYSTEMS', mission:'MISSION LOG', comms:'COMMS'};
+
+  switches.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-panel');
+      switches.forEach(function(b){ b.classList.toggle('active', b === btn); b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+      panels.forEach(function(p){ p.hidden = (p.getAttribute('data-view') !== target); });
+      label.textContent = names[target] || target;
+    });
+  });
+
+  // physical lever pull
+  var leverLink = document.getElementById('leverLink');
+  var leverHousing = document.getElementById('leverHousing');
+  if (leverLink && leverHousing) {
+    leverLink.addEventListener('click', function(){
+      leverHousing.classList.add('pulled');
+      setTimeout(function(){ leverHousing.classList.remove('pulled'); }, 900);
+    });
+  }
+</script>
+</body>
+</html>
